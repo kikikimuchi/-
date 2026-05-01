@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="お金管理">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<title>お金管理</title>
+<style>
+:root{
+  --inc:#C8E6FA;--inc-dk:#94CDEF;--inc-bd:#5BB8F5;
+  --exp:#FFD6D6;--exp-dk:#FFAAAA;--exp-bd:#FF7575;
+  --prv:#FFE5CC;--prv-dk:#FFCA99;--prv-bd:#FFB366;
+  --bg:#EEF6F3;--card:#FAFCFB;--txt:#2D2640;--sub:#7A7390;--bdr:#D9EDE6;
+  --r:12px;--sh:0 2px 10px rgba(106,90,160,.08);
+  --lavender:#C8B8E8;--lavender-dk:#B09DD8;--lavender-lt:#EDE8F7;
+  --mint:#B5DDD2;--mint-lt:#D4EDE8;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{font-family:-apple-system,'Hiragino Sans',sans-serif;background:var(--bg);color:var(--txt);padding-bottom:calc(120px + env(safe-area-inset-bottom,0px));}
+
+/* TAB BAR */
+#tabbar{position:fixed;bottom:0;left:0;right:0;background:#FAFCFB;border-top:1px solid var(--mint);display:flex;z-index:9999;box-shadow:0 -2px 10px rgba(106,90,160,.08);padding-bottom:max(env(safe-area-inset-bottom,0px),20px);}
+.tb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:10px 2px 10px;font-size:9px;color:var(--sub);background:none;border:none;cursor:pointer;white-space:nowrap;}
+.tb.on{color:#7B5EA7;}
+.tb svg{width:20px;height:20px;}
+
+/* PAGES */
+.pg{display:none;padding:16px 14px 20px;max-width:600px;margin:0 auto;}
+.pg.on{display:block;}
+.pg-h{font-size:20px;font-weight:700;margin-bottom:16px;}
+
+/* TYPE BTNS */
+.type-row{display:flex;gap:8px;margin-bottom:16px;}
+.tybtn{flex:1;padding:10px 4px;border:2.5px solid transparent;border-radius:var(--r);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;}
+.tybtn.inc{background:var(--inc);} .tybtn.inc.on{background:var(--inc-dk);border-color:var(--inc-bd);}
+.tybtn.exp{background:var(--exp);} .tybtn.exp.on{background:var(--exp-dk);border-color:var(--exp-bd);}
+.tybtn.prv{background:var(--prv);} .tybtn.prv.on{background:var(--prv-dk);border-color:var(--prv-bd);}
+
+/* FORM */
+.card{background:var(--card);border-radius:var(--r);padding:16px;box-shadow:var(--sh);}
+.fg{margin-bottom:14px;}
+.fl{font-size:12px;font-weight:600;color:var(--sub);margin-bottom:6px;display:block;}
+.fi{width:100%;padding:10px 12px;border:1.5px solid var(--bdr);border-radius:8px;font-size:16px;background:var(--bg);color:var(--txt);outline:none;-webkit-appearance:none;appearance:none;}
+.fi:focus{border-color:#7B5EA7;}
+select.fi{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;}
+
+/* CATEGORY */
+.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.cbtn{padding:8px 4px;border:1.5px solid var(--bdr);border-radius:8px;font-size:12px;background:var(--card);cursor:pointer;text-align:center;color:var(--txt);transition:all .15s;}
+.cbtn.on-inc{background:var(--inc-dk);border-color:var(--inc-bd);}
+.cbtn.on-exp{background:var(--exp-dk);border-color:var(--exp-bd);}
+.cbtn.on-prv{background:var(--prv-dk);border-color:var(--prv-bd);}
+
+/* RECEIPT */
+.rc-row{display:flex;gap:6px;}
+.rcbtn{flex:1;padding:8px;border:1.5px solid var(--bdr);border-radius:8px;font-size:13px;background:var(--card);cursor:pointer;text-align:center;color:var(--txt);transition:all .15s;}
+.rcbtn.on{background:var(--exp-dk);border-color:var(--exp-bd);}
+
+/* SUBMIT */
+.sbtn{width:100%;padding:14px;border:none;border-radius:var(--r);font-size:16px;font-weight:700;cursor:pointer;margin-top:4px;}
+.sbtn.inc{background:var(--inc-dk);color:#1A5276;}
+.sbtn.exp{background:var(--exp-dk);color:#7B241C;}
+.sbtn.prv{background:var(--prv-dk);color:#784212;}
+
+/* LIST */
+.flt-row{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
+.fbtn{padding:6px 12px;border:1.5px solid var(--bdr);border-radius:20px;font-size:12px;background:var(--card);cursor:pointer;color:var(--txt);}
+.fbtn.on-all{background:var(--lavender-lt);border-color:var(--lavender-dk);}
+.fbtn.on-inc{background:var(--inc);border-color:var(--inc-bd);}
+.fbtn.on-exp{background:var(--exp);border-color:var(--exp-bd);}
+.fbtn.on-prv{background:var(--prv);border-color:var(--prv-bd);}
+.fbtn.on-co{background:var(--mint-lt);border-color:var(--mint);}
+.fbtn.on-pj{background:var(--lavender-lt);border-color:var(--lavender-dk);}
+.ec{background:var(--card);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;box-shadow:var(--sh);cursor:pointer;border-left:4px solid transparent;}
+.ec.inc{border-left-color:var(--inc-bd);} .ec.exp{border-left-color:var(--exp-bd);} .ec.prv{border-left-color:var(--prv-bd);}
+.ec-top{display:flex;justify-content:space-between;align-items:center;}
+.ec-amt{font-size:18px;font-weight:700;}
+.ec-amt.inc{color:#1A5276;} .ec-amt.exp{color:#C0392B;} .ec-amt.prv{color:#784212;}
+.ec-dt{font-size:12px;color:var(--sub);}
+.ec-tags{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap;}
+.tag{font-size:11px;padding:2px 6px;border-radius:4px;}
+.tag.inc{background:var(--inc);} .tag.exp{background:var(--exp);} .tag.prv{background:var(--prv);}
+.ec-memo{font-size:12px;color:var(--sub);margin-top:3px;}
+.lsum{background:var(--card);border-radius:var(--r);padding:12px 14px;margin-bottom:12px;box-shadow:var(--sh);display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.lsi{text-align:center;} .lsl{font-size:11px;color:var(--sub);margin-bottom:2px;} .lsv{font-size:15px;font-weight:700;}
+
+/* MODAL */
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;align-items:flex-end;justify-content:center;}
+.ov.on{display:flex;}
+.modal{background:var(--card);border-radius:20px 20px 0 0;padding:20px 16px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));}
+.mhd{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.mttl{font-size:16px;font-weight:700;}
+.mcl{background:var(--bg);border:none;border-radius:50%;width:30px;height:30px;font-size:18px;cursor:pointer;color:var(--sub);display:flex;align-items:center;justify-content:center;}
+.del-btn{width:100%;padding:12px;border:none;border-radius:var(--r);font-size:15px;font-weight:600;cursor:pointer;margin-top:8px;background:#FEE2E2;color:#C0392B;}
+
+/* CALENDAR */
+.cal-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.cal-nav{background:var(--card);border:1.5px solid var(--bdr);border-radius:8px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px;color:var(--txt);}
+.cal-lbl{font-size:18px;font-weight:700;}
+.cg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.cdow{text-align:center;font-size:11px;font-weight:600;color:var(--sub);padding:4px 0;}
+.cday{background:var(--card);border-radius:8px;min-height:54px;padding:4px;}
+.cday.other{opacity:.3;} .cday.today{background:#EFF6FF;outline:2px solid #7B5EA7;}
+.cdn{font-size:12px;font-weight:600;}
+.csun .cdn{color:#E53E3E;} .csat .cdn{color:#3182CE;}
+.cia{font-size:10px;color:#1A5276;font-weight:600;} .cea{font-size:10px;color:#C0392B;font-weight:600;} .cpa{font-size:10px;color:#784212;font-weight:600;}
+.csum{background:var(--card);border-radius:var(--r);padding:14px;margin-top:10px;box-shadow:var(--sh);display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.csi{text-align:center;} .csl{font-size:11px;color:var(--sub);margin-bottom:2px;} .csv{font-size:16px;font-weight:700;}
+
+/* PROJECTS */
+.pc{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:10px;box-shadow:var(--sh);}
+.pc.done{opacity:.4;} .pc.dragging{opacity:.5;border:2px dashed #9CA3AF;}
+.pchd{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.pcdrag{font-size:20px;color:var(--sub);cursor:grab;flex-shrink:0;}
+.pcname{font-size:15px;font-weight:700;flex:1;}
+.pctotal{font-size:15px;font-weight:700;color:#C0392B;flex-shrink:0;}
+.done-btn{padding:6px 12px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;background:#D1FAE5;color:#065F46;flex-shrink:0;}
+.undo-btn{padding:6px 12px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;background:#FEE2E2;color:#991B1B;flex-shrink:0;}
+.pel{color:var(--sub);flex:1;} .pea{font-weight:600;color:#C0392B;flex-shrink:0;}
+.done-sep{text-align:center;color:var(--sub);font-size:12px;padding:10px 0 6px;}
+/* 完了済みアコーディオン */
+.done-accordion{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);margin-bottom:10px;overflow:hidden;}
+.done-accordion-hd{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;cursor:pointer;}
+.done-accordion-ttl{font-size:14px;font-weight:700;color:var(--sub);}
+.done-accordion-badge{background:#E5E7EB;color:var(--sub);font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;}
+.done-accordion-arr{font-size:16px;color:var(--sub);transition:transform .2s;}
+.done-accordion-arr.open{transform:rotate(180deg);}
+.done-accordion-body{display:none;border-top:1px solid var(--bdr);}
+.done-accordion-body.open{display:block;}
+.done-pcard{padding:14px;border-bottom:1px solid var(--bdr);}
+.done-pcard:last-child{border-bottom:none;}
+.pe{display:flex;justify-content:space-between;padding:7px 0;border-top:1px solid var(--bdr);font-size:13px;gap:8px;cursor:grab;}
+.pe.dragging{opacity:.4;}
+.pe-drag{color:var(--sub);font-size:16px;flex-shrink:0;padding-right:4px;}
+/* 予算バー */
+.budget-bar-wrap{margin:6px 0 2px;background:#F3F4F6;border-radius:4px;height:8px;overflow:hidden;}
+.budget-bar{height:100%;border-radius:4px;transition:width .3s;}
+.budget-info{font-size:11px;color:var(--sub);display:flex;justify-content:space-between;margin-top:2px;}
+
+/* COMPANY PAGE */
+.co-card{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:10px;box-shadow:var(--sh);}
+.co-name{font-size:16px;font-weight:700;margin-bottom:8px;}
+.co-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-top:1px solid var(--bdr);color:var(--sub);}
+.co-amt{font-weight:600;color:#C0392B;}
+
+/* ANNUAL PAGE */
+.yr-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.yr-nav{background:var(--card);border:1.5px solid var(--bdr);border-radius:8px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px;color:var(--txt);}
+.yr-lbl{font-size:18px;font-weight:700;}
+.yr-sum{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:14px;box-shadow:var(--sh);display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.yr-si{text-align:center;} .yr-sl{font-size:11px;color:var(--sub);margin-bottom:2px;} .yr-sv{font-size:16px;font-weight:700;}
+.chart-wrap{background:var(--card);border-radius:var(--r);padding:16px;box-shadow:var(--sh);margin-bottom:14px;}
+.chart-title{font-size:13px;font-weight:700;color:var(--sub);margin-bottom:12px;}
+.bar-chart{display:flex;align-items:flex-end;gap:4px;height:120px;}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.bar-inc{background:var(--inc-dk);border-radius:3px 3px 0 0;width:100%;min-height:2px;}
+.bar-exp{background:var(--exp-dk);border-radius:3px 3px 0 0;width:100%;min-height:2px;}
+.bar-lbl{font-size:9px;color:var(--sub);margin-top:2px;}
+.monthly-table{background:var(--card);border-radius:var(--r);padding:14px;box-shadow:var(--sh);}
+.mt-row{display:grid;grid-template-columns:2fr 3fr 3fr 3fr;gap:4px;padding:7px 0;border-bottom:1px solid var(--bdr);font-size:12px;}
+.mt-row:last-child{border-bottom:none;}
+.mt-hd{font-weight:700;font-size:11px;color:var(--sub);}
+
+/* SETTINGS */
+.ssec{background:var(--card);border-radius:var(--r);padding:16px;box-shadow:var(--sh);margin-bottom:16px;}
+.sttl{font-size:13px;font-weight:700;color:var(--sub);margin-bottom:14px;text-transform:uppercase;letter-spacing:.05em;}
+.srow{display:flex;align-items:center;gap:6px;padding:10px 0;border-bottom:1px solid var(--bdr);}
+.srow:last-of-type{border-bottom:none;}
+.sdrag{font-size:18px;color:var(--sub);cursor:grab;flex-shrink:0;}
+.srow.dragging{opacity:.4;}
+.sname{font-size:14px;flex:1;}
+.sdone-btn{padding:5px 10px;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:#D1FAE5;color:#065F46;flex-shrink:0;}
+.sdone-btn.is-done{background:#FEE2E2;color:#991B1B;}
+.sdel{background:#FEE2E2;color:#C0392B;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;}
+.add-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+.add-inp{flex:1;min-width:120px;padding:10px 12px;border:1.5px solid var(--bdr);border-radius:8px;font-size:16px;background:var(--bg);color:var(--txt);outline:none;-webkit-appearance:none;}
+.add-inp:focus{border-color:#7B5EA7;}
+.add-btn{padding:10px 16px;background:#7B5EA7;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;}
+/* 完了済み案件プルダウン */
+.done-summary{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);margin-bottom:16px;overflow:hidden;}
+.done-summary-hd{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;}
+.done-summary-ttl{font-size:14px;font-weight:700;color:var(--sub);}
+.done-summary-arr{font-size:18px;color:var(--sub);transition:transform .2s;}
+.done-summary-arr.open{transform:rotate(180deg);}
+.done-summary-body{display:none;padding:0 16px 14px;}
+.done-summary-body.open{display:block;}
+
+.empty{text-align:center;padding:44px 20px;color:var(--sub);}
+.empty-ic{font-size:40px;margin-bottom:8px;}
+/* DATETIME TOGGLE */
+.dt-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:0;}
+.sw-wrap{display:flex;align-items:center;cursor:pointer;flex-shrink:0;}
+.sw-wrap input{display:none;}
+.sw{display:inline-block;width:40px;height:22px;background:#CBD5E1;border-radius:11px;position:relative;transition:background .2s;}
+.sw::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:transform .2s;}
+.sw-wrap input:checked + .sw{background:#7B5EA7;}
+.sw-wrap input:checked + .sw::after{transform:translateX(18px);}
+#loading-overlay{display:none;position:fixed;inset:0;background:rgba(255,255,255,.8);z-index:99999;align-items:center;justify-content:center;flex-direction:column;gap:12px;}
+.loading-spinner{width:40px;height:40px;border:4px solid #E5E7EB;border-top-color:#7B5EA7;border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-txt{font-size:14px;color:var(--sub);}
+/* CHARACTER TOAST */
+#chara-toast{
+  position:fixed;bottom:calc(70px + env(safe-area-inset-bottom,34px));
+  left:50%;transform:translateX(-50%) translateY(200px);
+  display:flex;align-items:flex-start;gap:10px;
+  z-index:99998;transition:transform .4s cubic-bezier(.34,1.56,.64,1);
+  pointer-events:none;overflow:hidden;
+}
+#chara-toast.show{transform:translateX(-50%) translateY(0);}
+#chara-img{width:56px;height:56px;object-fit:contain;animation:none;flex-shrink:0;}
+#chara-toast.show #chara-img{animation:chara-bounce .5s ease .1s;}
+@keyframes chara-bounce{0%{transform:rotate(-8deg);}50%{transform:rotate(6deg);}100%{transform:rotate(0deg);}}
+#chara-bubble{
+  background:#fff;border-radius:16px 16px 16px 4px;
+  padding:8px 14px;font-size:13px;font-weight:600;color:#2D2640;
+  box-shadow:0 4px 16px rgba(106,90,160,.18);
+  border:1.5px solid var(--lavender);max-width:200px;line-height:1.5;
+}
+/* リロードボタン（各ページヘッダーに組み込み） */
+.reload-btn{background:var(--card);border:1.5px solid var(--bdr);border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--sh);color:var(--sub);padding:0;flex-shrink:0;}
+.reload-btn:active{background:var(--bg);}
+/* pg-h行にreloadを並べるためのラッパー */
+.pg-hd-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+</style>
+</head>
+<body>
+
+<div id="loading-overlay"><div class="loading-spinner"></div><div class="loading-txt">同期中...</div></div>
+
+<!-- キャラトースト -->
+<div id="chara-toast">
+  <img id="chara-img" src="icon.png" alt="">
+  <div id="chara-bubble"></div>
+</div>
+
+<!-- PAGE: 入力 -->
+<div id="pg-input" class="pg on">
+  <div class="pg-hd-row"><div class="pg-h" style="margin-bottom:0">新規記録</div><button class="reload-btn" id="reload-btn-input" title="再読み込み"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button></div>
+  <div class="type-row">
+    <button class="tybtn inc on" id="t-inc">収入</button>
+    <button class="tybtn exp" id="t-exp">経費</button>
+    <button class="tybtn prv" id="t-prv">プライベート</button>
+  </div>
+  <div class="card">
+    <div class="fg"><label class="fl">金額（円）</label><input type="number" id="in-amt" class="fi" placeholder="0" inputmode="numeric"></div>
+    <div class="fg"><label class="fl">カテゴリ</label><div class="cat-grid" id="in-cats"></div></div>
+    <div class="fg" id="in-transport-g" style="display:none">
+      <label class="fl" style="color:var(--exp-bd)">交通 詳細</label>
+      <div class="cat-grid" id="in-transport-cats"></div>
+    </div>
+    <div class="fg" id="in-proj-g" style="display:none"><label class="fl">案件 <span id="in-proj-req" style="color:#EF4444"></span></label><select id="in-proj" class="fi"><option value="">案件を選択（任意）</option></select></div>
+    <div class="fg" id="in-rc-g" style="display:none">
+      <label class="fl">領収書タイプ</label>
+      <div class="rc-row"><button class="rcbtn" id="r-paper">紙</button><button class="rcbtn" id="r-email">メール</button><button class="rcbtn" id="r-site">サイト</button></div>
+    </div>
+    <div class="fg" id="in-site-g" style="display:none"><label class="fl">サイト名</label><input type="text" id="in-site" class="fi" placeholder="サイト名を入力"></div>
+    <div class="fg"><label class="fl">メモ</label><input type="text" id="in-memo" class="fi" placeholder="任意"></div>
+    <div class="fg" id="in-deposit-g" style="display:none">
+      <label class="fl">入金日</label>
+      <input type="date" id="in-deposit-d" class="fi">
+    </div>
+    <div class="fg" id="in-pdate-g">
+      <div class="dt-row">
+        <label class="fl" style="margin-bottom:0">決済日時</label>
+        <label class="sw-wrap"><input type="checkbox" id="sw-pdate-on" checked><span class="sw"></span></label>
+      </div>
+      <div id="in-pdate-body" style="margin-top:6px">
+        <input type="date" id="in-pdate-d" class="fi">
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+          <label class="sw-wrap" style="flex-shrink:0"><input type="checkbox" id="sw-pdate"><span class="sw"></span></label>
+          <span style="font-size:12px;color:var(--sub)">時間</span>
+        </div>
+        <input type="time" id="in-pdate-t" class="fi" style="margin-top:6px;display:none">
+      </div>
+    </div>
+    <div class="fg" id="in-udate-g">
+      <div class="dt-row">
+        <label class="fl" style="margin-bottom:0">利用日時</label>
+        <label class="sw-wrap"><input type="checkbox" id="sw-udate-on" checked><span class="sw"></span></label>
+      </div>
+      <div id="in-udate-body" style="margin-top:6px">
+        <input type="date" id="in-udate-d" class="fi">
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+          <label class="sw-wrap" style="flex-shrink:0"><input type="checkbox" id="sw-udate"><span class="sw"></span></label>
+          <span style="font-size:12px;color:var(--sub)">時間</span>
+        </div>
+        <input type="time" id="in-udate-t" class="fi" style="margin-top:6px;display:none">
+      </div>
+    </div>
+    <button class="sbtn inc" id="in-submit">記録する</button>
+  </div>
+</div>
+
+<!-- PAGE: 一覧 -->
+<div id="pg-list" class="pg">
+  <div class="pg-hd-row"><div class="pg-h" style="margin-bottom:0">一覧</div><button class="reload-btn" id="reload-btn-list" title="再読み込み"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button></div>
+  <div class="flt-row">
+    <button class="fbtn on-all" id="f-all">すべて</button>
+    <button class="fbtn" id="f-inc">収入</button>
+    <button class="fbtn" id="f-exp">経費</button>
+    <button class="fbtn" id="f-pj">案件別</button>
+    <button class="fbtn" id="f-prv">プライベート</button>
+    <button class="fbtn" id="f-co">会社別</button>
+  </div>
+  <div id="list-filter-sub" style="margin-bottom:10px;display:none">
+    <select id="list-sub-sel" class="fi"></select>
+  </div>
+  <div id="list-summary"></div>
+  <div id="list-body"></div>
+</div>
+
+<!-- PAGE: カレンダー -->
+<div id="pg-cal" class="pg">
+  <div class="cal-hd">
+    <button class="cal-nav" id="cal-prev">&#8249;</button>
+    <div class="cal-lbl" id="cal-lbl"></div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="cal-nav" id="cal-next">&#8250;</button>
+      <button class="reload-btn" id="reload-btn-cal" title="再読み込み"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>
+    </div>
+  </div>
+  <div class="cg" id="cal-grid"></div>
+  <div class="csum" id="cal-sum"></div>
+</div>
+
+<!-- PAGE: 案件別 -->
+<div id="pg-proj" class="pg">
+  <div class="pg-hd-row"><div class="pg-h" style="margin-bottom:0">案件別</div><button class="reload-btn" id="reload-btn-proj" title="再読み込み"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button></div>
+  <div id="proj-body"></div>
+</div>
+
+<!-- PAGE: 年間売上 -->
+<div id="pg-annual" class="pg">
+  <div class="yr-hd">
+    <button class="yr-nav" id="yr-prev">&#8249;</button>
+    <div class="yr-lbl" id="yr-lbl"></div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="yr-nav" id="yr-next">&#8250;</button>
+      <button class="reload-btn" id="reload-btn-annual" title="再読み込み"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>
+    </div>
+  </div>
+  <div class="yr-sum" id="yr-sum"></div>
+  <div id="yr-target-wrap" style="display:none;margin-bottom:14px"></div>
+  <div class="chart-wrap"><div class="chart-title">月別 収入 / 経費</div><div class="bar-chart" id="yr-chart"></div></div>
+  <div class="monthly-table" id="yr-table"></div>
+</div>
+
+<!-- PAGE: 設定 -->
+<div id="pg-set" class="pg">
+  <div class="pg-hd-row"><div class="pg-h" style="margin-bottom:0">設定</div><button class="reload-btn" id="reload-btn-set" title="再読み込み"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button></div>
+  <!-- 案件管理 -->
+  <div class="ssec">
+    <div class="sttl">案件管理</div>
+    <div id="set-list"></div>
+    <div class="add-row">
+      <input type="text" id="set-inp" class="add-inp" placeholder="案件名">
+      <select id="set-co-sel" class="fi" style="flex:1;min-width:120px;margin-top:0"></select>
+      <button class="add-btn" id="set-add">追加</button>
+    </div>
+  </div>
+  <!-- 完了済み案件 -->
+  <div class="done-summary" id="done-summary-sec">
+    <div class="done-summary-hd" id="done-summary-hd">
+      <div class="done-summary-ttl">完了済み案件</div>
+      <div class="done-summary-arr" id="done-summary-arr">▼</div>
+    </div>
+    <div class="done-summary-body" id="done-summary-body"></div>
+  </div>
+  <!-- 取引先会社管理 -->
+  <div class="ssec">
+    <div class="sttl">取引先会社管理</div>
+    <div id="set-co-list"></div>
+    <div class="add-row">
+      <input type="text" id="set-co-inp" class="add-inp" placeholder="会社名">
+      <button class="add-btn" id="set-co-add">追加</button>
+    </div>
+  </div>
+  <!-- 年間売上目標 -->
+  <div class="ssec">
+    <div class="sttl">年間売上目標</div>
+    <div id="set-target-list"></div>
+    <div class="add-row">
+      <input type="number" id="set-target-year" class="add-inp" placeholder="年（例:2026）" inputmode="numeric" style="max-width:110px">
+      <input type="number" id="set-target-amt" class="add-inp" placeholder="目標金額（円）" inputmode="numeric">
+      <button class="add-btn" id="set-target-add">設定</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="ov" id="modal-ov">
+  <div class="modal">
+    <div class="mhd"><div class="mttl">記録を編集</div><button class="mcl" id="modal-cl">✕</button></div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<!-- TAB BAR -->
+<div id="tabbar">
+  <button class="tb on" id="tb-input">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>入力
+  </button>
+  <button class="tb" id="tb-list">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>一覧
+  </button>
+  <button class="tb" id="tb-proj">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>案件別
+  </button>
+  <button class="tb" id="tb-cal">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>カレンダー
+  </button>
+  <button class="tb" id="tb-annual">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>年間売上
+  </button>
+  <button class="tb" id="tb-set">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>設定
+  </button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-app.js";
+import { getFirestore, collection, doc, getDocs, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC4kuVMrD1iKBxsX8V12n8OHzPBW2xA0Ew",
+  authDomain: "keiriauto-6f8f1.firebaseapp.com",
+  projectId: "keiriauto-6f8f1",
+  storageBucket: "keiriauto-6f8f1.firebasestorage.app",
+  messagingSenderId: "796610783894",
+  appId: "1:796610783894:web:017da7e1949574090cf0b7"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+const ENTRIES_COL  = collection(db,'entries');
+const PROJECTS_COL = collection(db,'projects');
+const COMPANIES_COL= collection(db,'companies');
+const META_COL     = collection(db,'meta');
+
+// cache
+var cache = { entries:[], projects:[], companies:[], projOrders:[], doneItems:[], entryOrders:{}, salesTargets:{} };
+
+async function loadAll(){
+  showLoading(true);
+  try {
+    const eSnap = await getDocs(ENTRIES_COL);
+    cache.entries = eSnap.docs.map(d=>({id:parseInt(d.id),...d.data()}));
+    cache.entries.sort((a,b)=>b.id-a.id);
+
+    const pSnap = await getDocs(PROJECTS_COL);
+    cache.projects = [];
+    pSnap.docs.forEach(d=>{ if(d.id!=='__meta__') cache.projects.push(d.data()); });
+
+    const cSnap = await getDocs(COMPANIES_COL);
+    cache.companies = cSnap.docs.map(d=>d.data().name);
+
+    const mSnap = await getDocs(META_COL);
+    mSnap.docs.forEach(d=>{
+      if(d.id==='settings'){
+        const data=d.data();
+        cache.projOrders  = data.projOrders  || [];
+        cache.doneItems   = data.doneItems   || [];
+        cache.entryOrders = data.entryOrders || {};
+        cache.salesTargets= data.salesTargets|| {};
+      }
+    });
+  } catch(e){ console.error(e); alert('データ読み込みエラー'); }
+  showLoading(false);
+}
+
+async function saveMeta(){
+  await setDoc(doc(META_COL,'settings'),{ projOrders:cache.projOrders, doneItems:cache.doneItems, entryOrders:cache.entryOrders, salesTargets:cache.salesTargets });
+}
+
+function getE(){ return cache.entries; }
+function getP(){ return cache.projects; } // [{name, budget, company}]
+function getC(){ return cache.companies; }
+function getO(){ return cache.projOrders; }
+function getD(){ return cache.doneItems; }
+
+async function setE_add(e){ cache.entries.unshift(e); await setDoc(doc(ENTRIES_COL,String(e.id)),e); }
+async function setE_update(e){ const i=cache.entries.findIndex(x=>x.id===e.id); if(i!==-1)cache.entries[i]=e; await setDoc(doc(ENTRIES_COL,String(e.id)),e); }
+async function setE_delete(id){ cache.entries=cache.entries.filter(e=>e.id!==id); await deleteDoc(doc(ENTRIES_COL,String(id))); }
+
+async function saveProjects(){
+  const snap=await getDocs(PROJECTS_COL);
+  for(const d of snap.docs) await deleteDoc(d.ref);
+  for(const p of cache.projects) await setDoc(doc(PROJECTS_COL,p.name),p);
+}
+async function saveCompanies(){
+  const snap=await getDocs(COMPANIES_COL);
+  for(const d of snap.docs) await deleteDoc(d.ref);
+  for(const c of cache.companies) await setDoc(doc(COMPANIES_COL,c),{name:c});
+}
+async function setO(o){ cache.projOrders=o; await saveMeta(); }
+async function setD(d){ cache.doneItems=d;  await saveMeta(); }
+function getEntryOrders(proj){ return cache.entryOrders[proj]||[]; }
+async function saveEntryOrders(proj,ids){ cache.entryOrders[proj]=ids; await saveMeta(); }
+
+function showLoading(on){ var e=document.getElementById('loading-overlay'); if(e)e.style.display=on?'flex':'none'; }
+
+var _charaTimer=null;
+function showChara(msg){
+  var toast=q('chara-toast'), bubble=q('chara-bubble');
+  if(!toast||!bubble) return;
+  bubble.textContent=msg;
+  toast.classList.add('show');
+  if(_charaTimer) clearTimeout(_charaTimer);
+  _charaTimer=setTimeout(function(){ toast.classList.remove('show'); },2800);
+}
+
+// constants
+var CATS={
+  inc:['売上','給与','副業','投資','その他'],
+  exp:['交通','飲食','宿泊','消耗品','通信','購入','外注費','機材レンタル','その他'],
+  prv:['食費','交通','趣味','日用品','医療','衣類','その他']
+};
+var TRANSPORT_CATS=['ガソリン','ETC','駐車','レンタカー','その他'];
+var LBL={income:'収入',expense:'経費',private:'プライベート'};
+var CLS={income:'inc',expense:'exp',private:'prv'};
+function pad(n){ return n<10?'0'+n:''+n; }
+function nowDate(){ var d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function nowTime(){ var d=new Date(); return pad(d.getHours())+':'+pad(d.getMinutes()); }
+function nowDT(){ return nowDate()+'T'+nowTime(); }
+function getDateVal(dateId, timeId, swId){
+  var d=q(dateId).value||nowDate();
+  var sw=q(swId); var useTime=sw&&sw.checked;
+  var t=useTime?(q(timeId).value||nowTime()):'00:00';
+  return d+'T'+t;
+}
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+// 日付文字列を整形。時刻が00:00なら省略
+function fmtDate(dt){
+  if(!dt) return '';
+  var d=dt.slice(0,10), t=(dt.length>10)?dt.slice(11,16):'';
+  if(!t||t==='00:00') return d;
+  return d+' '+t;
+}
+function q(id){ return document.getElementById(id); }
+function mk(tag,cls){ var e=document.createElement(tag); if(cls)e.className=cls; return e; }
+function emptyEl(icon,txt){ var d=mk('div','empty'); d.innerHTML='<div class="empty-ic">'+icon+'</div><div>'+txt+'</div>'; return d; }
+
+var S={ type:'income', cat:'', catSub:'', rcpt:'', flt:'all', fltSub:'', calY:new Date().getFullYear(), calM:new Date().getMonth(), yrY:new Date().getFullYear(), editId:null };
+
+window.onload = async function(){
+  q('in-pdate-d').value=nowDate(); q('in-pdate-t').value=nowTime();
+  q('in-udate-d').value=nowDate(); q('in-udate-t').value=nowTime();
+  q('in-deposit-d').value=nowDate();
+  // 初期は収入 → 入金日のみ表示、決済/利用は非表示
+  q('in-deposit-g').style.display='';
+  q('in-pdate-g').style.display='none';
+  q('in-udate-g').style.display='none';
+
+  // 日時マスタースイッチ（日時全体のオンオフ）
+  function bindMasterSwitch(swId, bodyId){
+    q(swId).addEventListener('change', function(){
+      q(bodyId).style.display = this.checked ? '' : 'none';
+    });
+  }
+  bindMasterSwitch('sw-pdate-on', 'in-pdate-body');
+  bindMasterSwitch('sw-udate-on', 'in-udate-body');
+
+  // 時刻スイッチ（初期OFF）
+  function bindSwitch(swId,timeId){
+    q(timeId).style.display='none';
+    q(swId).addEventListener('change',function(){ q(timeId).style.display=this.checked?'':'none'; });
+  }
+  bindSwitch('sw-pdate','in-pdate-t');
+  bindSwitch('sw-udate','in-udate-t');
+
+  await loadAll();
+
+  var tabDefs=[
+    {btn:'tb-input',  pg:'pg-input',  fn:null},
+    {btn:'tb-list',   pg:'pg-list',   fn:renderList},
+    {btn:'tb-cal',    pg:'pg-cal',    fn:renderCal},
+    {btn:'tb-proj',   pg:'pg-proj',   fn:renderProj},
+    {btn:'tb-annual', pg:'pg-annual', fn:renderAnnual},
+    {btn:'tb-set',    pg:'pg-set',    fn:renderSet}
+  ];
+  tabDefs.forEach(function(t){
+    q(t.btn).addEventListener('click',function(){
+      tabDefs.forEach(function(x){ q(x.btn).classList.remove('on'); q(x.pg).classList.remove('on'); });
+      q(t.btn).classList.add('on'); q(t.pg).classList.add('on');
+      if(t.fn) t.fn();
+    });
+  });
+
+  q('t-inc').addEventListener('click',function(){ switchType('income'); });
+  q('t-exp').addEventListener('click',function(){ switchType('expense'); });
+  q('t-prv').addEventListener('click',function(){ switchType('private'); });
+  q('r-paper').addEventListener('click',function(){ switchReceipt('paper'); });
+  q('r-email').addEventListener('click',function(){ switchReceipt('email'); });
+  q('r-site').addEventListener('click', function(){ switchReceipt('site'); });
+  q('in-submit').addEventListener('click',submitEntry);
+  q('f-all').addEventListener('click',function(){ switchFilter('all'); });
+  q('f-inc').addEventListener('click',function(){ switchFilter('income'); });
+  q('f-exp').addEventListener('click',function(){ switchFilter('expense'); });
+  q('f-prv').addEventListener('click',function(){ switchFilter('private'); });
+  q('f-co').addEventListener('click', function(){ switchFilter('co'); });
+  q('f-pj').addEventListener('click', function(){ switchFilter('pj'); });
+  q('list-sub-sel').addEventListener('change',function(){ S.fltSub=this.value; renderList(); });
+  q('cal-prev').addEventListener('click',function(){ if(S.calM===0){S.calM=11;S.calY--;}else{S.calM--;} renderCal(); });
+  q('cal-next').addEventListener('click',function(){ if(S.calM===11){S.calM=0;S.calY++;}else{S.calM++;} renderCal(); });
+  q('yr-prev').addEventListener('click',function(){ S.yrY--; renderAnnual(); });
+  q('yr-next').addEventListener('click',function(){ S.yrY++; renderAnnual(); });
+  q('modal-cl').addEventListener('click',closeModal);
+  q('modal-ov').addEventListener('click',function(e){ if(e.target===q('modal-ov')) closeModal(); });
+  // 各ページのリロードボタン
+  async function doReload(){
+    await loadAll();
+    if(q('pg-list').classList.contains('on')) renderList();
+    else if(q('pg-cal').classList.contains('on')) renderCal();
+    else if(q('pg-proj').classList.contains('on')) renderProj();
+    else if(q('pg-annual').classList.contains('on')) renderAnnual();
+    else if(q('pg-set').classList.contains('on')) renderSet();
+    showChara('更新したよ！');
+  }
+  ['reload-btn-input','reload-btn-list','reload-btn-cal','reload-btn-proj','reload-btn-annual','reload-btn-set'].forEach(function(id){
+    var btn=q(id); if(btn) btn.addEventListener('click', doReload);
+  });
+  q('set-add').addEventListener('click',addProject);
+  q('set-inp').addEventListener('keydown',function(e){ if(e.key==='Enter') addProject(); });
+  q('set-co-add').addEventListener('click',addCompany);
+  q('set-co-inp').addEventListener('keydown',function(e){ if(e.key==='Enter') addCompany(); });
+  q('set-target-add').addEventListener('click',addSalesTarget);
+  q('done-summary-hd').addEventListener('click',function(){
+    var body=q('done-summary-body'), arr=q('done-summary-arr');
+    body.classList.toggle('open'); arr.classList.toggle('open');
+  });
+
+  buildCats(q('in-cats'),'inc','');
+  // 初期は収入タイプ：案件表示、入金日表示
+  q('in-proj-g').style.display='';
+  fillSel(q('in-proj'), getP().map(function(p){return p.name;}));
+};
+
+// ===== INPUT =====
+function switchType(type){
+  S.type=type; S.cat=''; S.rcpt='';
+  var c=CLS[type];
+  ['inc','exp','prv'].forEach(function(x){ q('t-'+x).classList.remove('on'); });
+  q('t-'+c).classList.add('on');
+  q('in-submit').className='sbtn '+c;
+  // 案件：収入・経費で表示
+  q('in-proj-g').style.display  = type==='private' ? 'none' : '';
+  var reqSpan=q('in-proj-req');
+  if(reqSpan) reqSpan.textContent = type==='expense' ? '*' : '';
+  var projSel=q('in-proj');
+  if(projSel) projSel.options[0].textContent = type==='expense' ? '案件を選択' : '案件を選択（任意）';
+  q('in-rc-g').style.display    = type==='expense' ? '' : 'none';
+  q('in-site-g').style.display  = 'none';
+  ['r-paper','r-email','r-site'].forEach(function(id){ q(id).classList.remove('on'); });
+  fillSel(q('in-proj'), getP().map(function(p){return p.name;}));
+  // 収入 → 入金日のみ。経費/プライベート → 決済日時＋利用日時
+  if(type==='income'){
+    q('in-deposit-g').style.display='';
+    q('in-pdate-g').style.display='none';
+    q('in-udate-g').style.display='none';
+  } else {
+    q('in-deposit-g').style.display='none';
+    q('in-pdate-g').style.display='';
+    q('in-udate-g').style.display = type==='private' ? 'none' : '';
+  }
+  buildCats(q('in-cats'),c,'');
+}
+
+function switchReceipt(r){
+  S.rcpt=r;
+  ['r-paper','r-email','r-site'].forEach(function(id){ q(id).classList.remove('on'); });
+  ({paper:'r-paper',email:'r-email',site:'r-site'})[r] && q(({paper:'r-paper',email:'r-email',site:'r-site'})[r]).classList.add('on');
+  q('in-site-g').style.display = r==='site' ? '' : 'none';
+}
+
+function buildCats(container, typeCls, selected){
+  container.innerHTML='';
+  (CATS[typeCls]||[]).forEach(function(cat){
+    var b=mk('button','cbtn');
+    if(cat===selected) b.classList.add('on-'+typeCls);
+    b.textContent=cat;
+    b.addEventListener('click',(function(c,tc){ return function(){
+      S.cat=c; S.catSub='';
+      buildCats(container,tc,c);
+      if(container.id==='m-cats'&&window._mState){ window._mState.cat=c; window._mState.catSub=''; }
+      // 交通サブカテゴリ
+      if(container.id==='in-cats'){
+        var tg=q('in-transport-g');
+        if(tg){
+          if(tc==='exp'&&c==='交通'){
+            tg.style.display='';
+            buildTransportCats(q('in-transport-cats'));
+          } else { tg.style.display='none'; }
+        }
+      }
+    }; })(cat,typeCls));
+    container.appendChild(b);
+  });
+}
+
+function buildTransportCats(container){
+  container.innerHTML='';
+  TRANSPORT_CATS.forEach(function(sub){
+    var b=mk('button','cbtn');
+    if(sub===S.catSub) b.classList.add('on-exp');
+    b.textContent=sub;
+    b.addEventListener('click',(function(s){ return function(){
+      S.catSub=s;
+      buildTransportCats(container);
+      if(window._mState) window._mState.catSub=s;
+    }; })(sub));
+    container.appendChild(b);
+  });
+}
+
+function fillSel(sel, names){
+  var cur=sel.value;
+  sel.innerHTML='<option value="">選択してください</option>';
+  names.forEach(function(n){ var o=mk('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
+  if(cur) sel.value=cur;
+}
+function fillCoSel(sel){
+  var cur=sel.value;
+  sel.innerHTML='<option value="">会社を選択（任意）</option>';
+  getC().forEach(function(n){ var o=mk('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
+  if(cur) sel.value=cur;
+}
+
+async function submitEntry(){
+  var amt=parseInt(q('in-amt').value);
+  if(!amt||amt<=0){ alert('金額を入力してください'); return; }
+  if(!S.cat){ alert('カテゴリを選択してください'); return; }
+  var proj='';
+  if(S.type==='expense'){
+    proj=q('in-proj').value;
+    if(!proj){ alert('案件を選択してください'); return; }
+  } else if(S.type==='income'){
+    proj=q('in-proj').value; // 任意
+  }
+  var finalCat = (S.cat==='交通'&&S.type==='expense'&&S.catSub) ? '交通/'+S.catSub : S.cat;
+  var payDate = S.type==='income'
+    ? (q('in-deposit-d').value||nowDate())+'T00:00'
+    : (q('sw-pdate-on').checked ? getDateVal('in-pdate-d','in-pdate-t','sw-pdate') : '');
+  var useDate = S.type==='expense' && q('sw-udate-on') && q('sw-udate-on').checked
+    ? getDateVal('in-udate-d','in-udate-t','sw-udate') : '';
+  var entry={ id:Date.now(), type:S.type, amount:amt, category:finalCat,
+    paymentDate: payDate,
+    usageDate: useDate,
+    memo:q('in-memo').value, project:proj,
+    receipt:S.type==='expense'?S.rcpt:'', siteName:S.type==='expense'&&S.rcpt==='site'?q('in-site').value:'' };
+  showLoading(true); await setE_add(entry); showLoading(false);
+  q('in-amt').value=''; q('in-memo').value=''; q('in-site').value='';
+  S.cat=''; S.catSub=''; S.rcpt='';
+  ['r-paper','r-email','r-site'].forEach(function(id){ q(id).classList.remove('on'); });
+  q('in-site-g').style.display='none';
+  var tg=q('in-transport-g'); if(tg) tg.style.display='none';
+  q('in-deposit-d').value=nowDate();
+  q('in-pdate-d').value=nowDate(); q('in-pdate-t').value=nowTime();
+  q('in-udate-d').value=nowDate(); q('in-udate-t').value=nowTime();
+  // スイッチをリセット（マスターON・時刻OFF）
+  if(q('sw-pdate-on')){ q('sw-pdate-on').checked=true; q('in-pdate-body').style.display=''; }
+  if(q('sw-udate-on')){ q('sw-udate-on').checked=true; q('in-udate-body').style.display=''; }
+  if(q('sw-pdate')){ q('sw-pdate').checked=false; q('in-pdate-t').style.display='none'; }
+  if(q('sw-udate')){ q('sw-udate').checked=false; q('in-udate-t').style.display='none'; }
+  buildCats(q('in-cats'),CLS[S.type],'');
+  showChara('記録したよ！');
+}
+
+// ===== LIST =====
+function switchFilter(f){
+  S.flt=f; S.fltSub='';
+  var map={all:'f-all',income:'f-inc',expense:'f-exp',private:'f-prv',co:'f-co',pj:'f-pj'};
+  var cls={all:'on-all',income:'on-inc',expense:'on-exp',private:'on-prv',co:'on-co',pj:'on-pj'};
+  Object.keys(map).forEach(function(k){ q(map[k]).className='fbtn'; });
+  q(map[f]).classList.add(cls[f]);
+
+  var subG=q('list-filter-sub'), subSel=q('list-sub-sel');
+  if(f==='co'){
+    subG.style.display='';
+    fillSel(subSel, getC()); subSel.insertAdjacentHTML('afterbegin','<option value="">全会社</option>');
+    S.fltSub='';
+  } else if(f==='pj'){
+    subG.style.display='';
+    fillSel(subSel, getP().map(function(p){return p.name;})); subSel.insertAdjacentHTML('afterbegin','<option value="">全案件</option>');
+    S.fltSub='';
+  } else { subG.style.display='none'; }
+  renderList();
+}
+
+function renderList(){
+  var data=getE();
+  if(S.flt==='income')  data=data.filter(function(e){ return e.type==='income'; });
+  else if(S.flt==='expense') data=data.filter(function(e){ return e.type==='expense'; });
+  else if(S.flt==='private') data=data.filter(function(e){ return e.type==='private'; });
+  else if(S.flt==='co'){
+    data=data.filter(function(e){ return e.type==='expense'; });
+    if(S.fltSub) data=data.filter(function(e){ return e.company===S.fltSub; });
+  } else if(S.flt==='pj'){
+    data=data.filter(function(e){ return e.type==='expense'; });
+    if(S.fltSub) data=data.filter(function(e){ return e.project===S.fltSub; });
+  }
+
+  // summary
+  var tI=0,tE=0,tP=0;
+  data.forEach(function(e){ if(e.type==='income')tI+=e.amount; else if(e.type==='expense')tE+=e.amount; else tP+=e.amount; });
+  var sumEl=q('list-summary');
+
+  if(S.flt==='pj' && S.fltSub){
+    // 案件に紐づく収入合計を算出
+    var projInc = getE().filter(function(e){ return e.type==='income' && e.project===S.fltSub; })
+                        .reduce(function(s,e){ return s+e.amount; }, 0);
+    var balance = projInc - tE;
+    var pct = projInc>0 ? Math.min(100,Math.round(tE/projInc*100)) : 0;
+    var barColor = pct>40?'#EF4444':'#10B981';
+    sumEl.innerHTML='<div class="lsum" style="grid-template-columns:1fr 1fr">'+
+      '<div class="lsi"><div class="lsl">売上</div><div class="lsv" style="color:#1A5276">+¥'+projInc.toLocaleString()+'</div></div>'+
+      '<div class="lsi"><div class="lsl">経費</div><div class="lsv" style="color:#C0392B">-¥'+tE.toLocaleString()+'</div></div>'+
+      '<div class="lsi" style="grid-column:span 2"><div class="lsl">収支</div><div class="lsv" style="color:'+(balance>=0?'#1A5276':'#C0392B')+'">'+(balance>=0?'+':'')+'¥'+balance.toLocaleString()+'</div></div>'+
+      '</div>'+
+      (projInc>0?'<div style="background:var(--card);border-radius:var(--r);padding:10px 14px;margin-bottom:12px;box-shadow:var(--sh)"><div style="background:#F3F4F6;border-radius:4px;height:8px;overflow:hidden;margin-bottom:4px"><div style="height:100%;display:flex;border-radius:4px;overflow:hidden"><div style="width:'+pct+'%;background:#EF4444"></div><div style="flex:1;background:#10B981"></div></div></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--sub)"><span>経費率 <span style="color:'+barColor+';font-weight:700">'+pct+'%</span></span><span>¥'+tE.toLocaleString()+' / ¥'+projInc.toLocaleString()+'</span></div></div>':'');
+  } else if(S.flt==='all'){
+    sumEl.innerHTML='<div class="lsum"><div class="lsi"><div class="lsl">収入合計</div><div class="lsv" style="color:#1A5276">+¥'+tI.toLocaleString()+'</div></div><div class="lsi"><div class="lsl">経費合計</div><div class="lsv" style="color:#C0392B">-¥'+tE.toLocaleString()+'</div></div><div class="lsi"><div class="lsl">プライベート</div><div class="lsv" style="color:#784212">-¥'+tP.toLocaleString()+'</div></div><div class="lsi"><div class="lsl">収支</div><div class="lsv" style="color:'+((tI-tE-tP)>=0?'#1A5276':'#C0392B')+'">'+(tI-tE-tP>=0?'+':'')+'¥'+(tI-tE-tP).toLocaleString()+'</div></div></div>';
+  } else if(S.flt==='income'){
+    sumEl.innerHTML='<div class="lsum"><div class="lsi" style="grid-column:span 2"><div class="lsl">収入合計</div><div class="lsv" style="color:#1A5276">+¥'+tI.toLocaleString()+'</div></div></div>';
+  } else if(S.flt==='expense'||S.flt==='co'){
+    sumEl.innerHTML='<div class="lsum"><div class="lsi" style="grid-column:span 2"><div class="lsl">経費合計</div><div class="lsv" style="color:#C0392B">-¥'+tE.toLocaleString()+'</div></div></div>';
+  } else if(S.flt==='private'){
+    sumEl.innerHTML='<div class="lsum"><div class="lsi" style="grid-column:span 2"><div class="lsl">プライベート合計</div><div class="lsv" style="color:#784212">-¥'+tP.toLocaleString()+'</div></div></div>';
+  } else {
+    sumEl.innerHTML='<div class="lsum"><div class="lsi" style="grid-column:span 2"><div class="lsl">経費合計</div><div class="lsv" style="color:#C0392B">-¥'+tE.toLocaleString()+'</div></div></div>';
+  }
+
+  var body=q('list-body'); body.innerHTML='';
+  if(!data.length){ body.appendChild(emptyEl('📋','記録がありません')); return; }
+  data.forEach(function(entry){
+    var c=CLS[entry.type];
+    var card=mk('div','ec '+c);
+    var sign=entry.type==='income'?'+':'-';
+    var dtLabel=entry.type==='income'?'入金: '+entry.paymentDate.slice(0,10):fmtDate(entry.paymentDate);
+    var tags='<span class="tag '+c+'">'+LBL[entry.type]+'</span>';
+    if(entry.category) tags+='<span class="tag '+c+'">'+esc(entry.category)+'</span>';
+    if(entry.project)  tags+='<span class="tag '+c+'">'+esc(entry.project)+'</span>';
+    if(entry.company)  tags+='<span class="tag exp" style="background:#E0E7FF">'+esc(entry.company)+'</span>';
+    card.innerHTML='<div class="ec-top"><div class="ec-amt '+c+'">'+sign+'¥'+entry.amount.toLocaleString()+'</div><div class="ec-dt">'+dtLabel+'</div></div><div class="ec-tags">'+tags+'</div>'+(entry.memo?'<div class="ec-memo">'+esc(entry.memo)+'</div>':'');
+    (function(e){ card.addEventListener('click',function(){ openModal(e); }); })(entry);
+    body.appendChild(card);
+  });
+}
+
+// ===== MODAL =====
+function openModal(entry){
+  S.editId=entry.id;
+  var origCls=CLS[entry.type];
+  window._mState={type:entry.type,cat:entry.category||'',rcpt:entry.receipt||''};
+  var projs=getP().map(function(p){return p.name;});
+  var pOpts='<option value="">案件を選択</option>'+projs.map(function(p){ return '<option value="'+esc(p)+'"'+(entry.project===p?' selected':'')+'>'+esc(p)+'</option>'; }).join('');
+  var coOpts='<option value="">会社を選択（任意）</option>'+getC().map(function(c){ return '<option value="'+esc(c)+'"'+(entry.company===c?' selected':'')+'>'+esc(c)+'</option>'; }).join('');
+  var rcHtml='';
+  if(entry.type==='expense'){
+    rcHtml='<div class="fg"><label class="fl">領収書タイプ</label><div class="rc-row" id="m-rc">'+
+      ['paper','email','site'].map(function(r,i){ var l=['紙','メール','サイト'][i]; return '<button class="rcbtn'+(entry.receipt===r?' on':'')+'">'+l+'</button>'; }).join('')+
+    '</div></div><div class="fg" id="m-site-g" style="display:'+(entry.receipt==='site'?'':'none')+'"><label class="fl">サイト名</label><input type="text" id="m-site" class="fi" value="'+esc(entry.siteName||'')+'"></div>';
+  }
+  var tyHtml=['income','expense','private'].map(function(t){ var c=CLS[t]; return '<button class="tybtn '+c+(t===entry.type?' on':'')+'">'+LBL[t]+'</button>'; }).join('');
+  var pdateVal=esc(entry.paymentDate||'');
+  var depositVal=entry.type==='income'?(entry.paymentDate||'').slice(0,10):'';
+  var dateHtml='';
+  if(entry.type==='income'){
+    dateHtml='<div class="fg"><label class="fl">入金日</label><input type="date" id="m-deposit" class="fi" value="'+depositVal+'"></div>';
+  } else {
+    dateHtml='<div class="fg"><label class="fl">決済日時</label><input type="datetime-local" id="m-pdate" class="fi" value="'+pdateVal+'"></div>'+
+      (entry.type!=='private'?'<div class="fg"><label class="fl">利用日時</label><input type="datetime-local" id="m-udate" class="fi" value="'+esc(entry.usageDate||'')+'"></div>':'');
+  }
+  q('modal-body').innerHTML=
+    '<div class="type-row" id="m-ty">'+tyHtml+'</div>'+
+    '<div class="fg"><label class="fl">金額（円）</label><input type="number" id="m-amt" class="fi" value="'+entry.amount+'" inputmode="numeric"></div>'+
+    '<div class="fg"><label class="fl">カテゴリ</label><div class="cat-grid" id="m-cats"></div></div>'+
+    (entry.type==='expense'?'<div class="fg"><label class="fl">取引先会社</label><select id="m-co" class="fi">'+coOpts+'</select></div>':'')+
+    ((entry.type==='expense'||entry.type==='income')?'<div class="fg"><label class="fl">案件</label><select id="m-proj" class="fi">'+pOpts+'</select></div>':'')+
+    rcHtml+
+    dateHtml+
+    '<div class="fg"><label class="fl">メモ</label><input type="text" id="m-memo" class="fi" value="'+esc(entry.memo||'')+'"></div>'+
+    '<button class="sbtn '+origCls+'" id="m-save">更新する</button>'+
+    '<button class="del-btn" id="m-del">この記録を削除</button>';
+
+  q('m-ty').querySelectorAll('.tybtn').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var t=btn.classList.contains('inc')?'income':btn.classList.contains('exp')?'expense':'private';
+      window._mState.type=t; window._mState.cat='';
+      q('m-ty').querySelectorAll('.tybtn').forEach(function(b){ b.classList.remove('on'); });
+      btn.classList.add('on'); q('m-save').className='sbtn '+CLS[t];
+      buildCats(q('m-cats'),CLS[t],'');
+    });
+  });
+  buildCats(q('m-cats'),origCls,window._mState.cat);
+  if(entry.type==='expense'){
+    var rVals=['paper','email','site'];
+    q('m-rc').querySelectorAll('.rcbtn').forEach(function(btn,i){
+      btn.addEventListener('click',function(){
+        window._mState.rcpt=rVals[i];
+        q('m-rc').querySelectorAll('.rcbtn').forEach(function(b){ b.classList.remove('on'); });
+        btn.classList.add('on');
+        q('m-site-g').style.display=rVals[i]==='site'?'':'none';
+      });
+    });
+  }
+  q('m-save').addEventListener('click',async function(){
+    var amt=parseInt((q('m-amt')||{}).value);
+    if(!amt||amt<=0){ alert('金額を入力してください'); return; }
+    var data=getE(), idx=-1;
+    for(var i=0;i<data.length;i++){ if(data[i].id===S.editId){idx=i;break;} }
+    if(idx===-1){ closeModal(); return; }
+    var orig=data[idx], type=window._mState.type, cat=window._mState.cat||orig.category, rcpt=window._mState.rcpt;
+    var payDate;
+    if(type==='income'){
+      var dep=q('m-deposit'); payDate=(dep?dep.value:orig.paymentDate.slice(0,10))+'T00:00';
+    } else {
+      payDate=(q('m-pdate')||{}).value||orig.paymentDate;
+    }
+    var updated={ id:orig.id, type:type, amount:amt, category:cat,
+      paymentDate: payDate,
+      usageDate:type==='expense'?(q('m-udate')||{}).value||'':'',
+      memo:(q('m-memo')||{}).value||'',
+      project:(type==='expense'||type==='income')?(q('m-proj')||{}).value||'':'',
+      company:type==='expense'?(q('m-co')||{}).value||'':'',
+      receipt:type==='expense'?rcpt:'',
+      siteName:type==='expense'&&rcpt==='site'?(q('m-site')||{}).value||'':'' };
+    showLoading(true); await setE_update(updated); showLoading(false);
+    closeModal(); renderList();
+  });
+  q('m-del').addEventListener('click',async function(){
+    if(!confirm('この記録を削除しますか？')) return;
+    showLoading(true); await setE_delete(S.editId); showLoading(false);
+    closeModal(); renderList();
+  });
+  q('modal-ov').classList.add('on');
+}
+function closeModal(){ q('modal-ov').classList.remove('on'); S.editId=null; window._mState=null; }
+
+// ===== CALENDAR =====
+function renderCal(){
+  var data=getE(), Y=S.calY, M=S.calM;
+  q('cal-lbl').textContent=Y+'年'+(M+1)+'月';
+  var first=new Date(Y,M,1), lastD=new Date(Y,M+1,0).getDate(), dow0=first.getDay(), prevLast=new Date(Y,M,0).getDate();
+  var inc={},exp={},prv={};
+  data.forEach(function(e){ var ds=(e.paymentDate||'').slice(0,10); if(!ds) return; var d=new Date(ds+'T00:00:00'); if(d.getFullYear()!==Y||d.getMonth()!==M) return; var day=d.getDate(); if(e.type==='income')inc[day]=(inc[day]||0)+e.amount; else if(e.type==='expense')exp[day]=(exp[day]||0)+e.amount; else prv[day]=(prv[day]||0)+e.amount; });
+  var grid=q('cal-grid'); grid.innerHTML='';
+  ['日','月','火','水','木','金','土'].forEach(function(d,i){ var h=mk('div','cdow'); h.style.color=i===0?'#E53E3E':i===6?'#3182CE':''; h.textContent=d; grid.appendChild(h); });
+  for(var i=0;i<dow0;i++){ var c=mk('div','cday other'); c.innerHTML='<div class="cdn">'+(prevLast-dow0+1+i)+'</div>'; grid.appendChild(c); }
+  var today=new Date();
+  for(var d=1;d<=lastD;d++){
+    var dow=new Date(Y,M,d).getDay(), isT=today.getFullYear()===Y&&today.getMonth()===M&&today.getDate()===d;
+    var c2=mk('div','cday'+(isT?' today':'')+(dow===0?' csun':dow===6?' csat':''));
+    var h2='<div class="cdn">'+d+'</div>';
+    if(inc[d]) h2+='<div class="cia">+'+inc[d].toLocaleString()+'</div>';
+    if(exp[d]) h2+='<div class="cea">-'+exp[d].toLocaleString()+'</div>';
+    if(prv[d]) h2+='<div class="cpa">-'+prv[d].toLocaleString()+'</div>';
+    c2.innerHTML=h2; grid.appendChild(c2);
+  }
+  var total=dow0+lastD, rem=total%7===0?0:7-(total%7);
+  for(var j=1;j<=rem;j++){ var c3=mk('div','cday other'); c3.innerHTML='<div class="cdn">'+j+'</div>'; grid.appendChild(c3); }
+  var mI=0,mE=0,mP=0;
+  data.forEach(function(e){ var ds=(e.paymentDate||'').slice(0,10); if(!ds) return; var d=new Date(ds+'T00:00:00'); if(d.getFullYear()!==Y||d.getMonth()!==M) return; if(e.type==='income')mI+=e.amount; else if(e.type==='expense')mE+=e.amount; else mP+=e.amount; });
+  var bal=mI-mE-mP;
+  q('cal-sum').innerHTML='<div class="csi"><div class="csl">収入合計</div><div class="csv" style="color:#1A5276">+¥'+mI.toLocaleString()+'</div></div><div class="csi"><div class="csl">経費合計</div><div class="csv" style="color:#C0392B">-¥'+mE.toLocaleString()+'</div></div><div class="csi"><div class="csl">プライベート</div><div class="csv" style="color:#784212">-¥'+mP.toLocaleString()+'</div></div><div class="csi"><div class="csl">収支</div><div class="csv" style="color:'+(bal>=0?'#1A5276':'#C0392B')+'">'+(bal>=0?'+':'')+'¥'+bal.toLocaleString()+'</div></div>';
+}
+
+// ===== PROJECTS =====
+function sortedP(){ var ps=getP(), os=getO(); return ps.slice().sort(function(a,b){ var ai=os.indexOf(a.name),bi=os.indexOf(b.name); if(ai===-1)ai=9999; if(bi===-1)bi=9999; return ai-bi; }); }
+function renderProj(){
+  var data=getE().filter(function(e){ return e.type==='expense'; });
+  var done=getD(), sorted=sortedP(), body=q('proj-body'); body.innerHTML='';
+  if(!sorted.length){ body.appendChild(emptyEl('📁','設定で案件を追加してください')); return; }
+  var active=sorted.filter(function(p){ return done.indexOf(p.name)===-1; });
+  var doneL=sorted.filter(function(p){ return done.indexOf(p.name)!==-1; });
+  active.forEach(function(p){ body.appendChild(makePCard(p,data,false)); });
+  if(doneL.length){
+    var acc=mk('div','done-accordion');
+    var hd2=mk('div','done-accordion-hd');
+    hd2.innerHTML=
+      '<div style="display:flex;align-items:center;gap:8px">'+
+        '<span class="done-accordion-ttl">完了済み案件</span>'+
+        '<span class="done-accordion-badge">'+doneL.length+'件</span>'+
+      '</div>'+
+      '<span class="done-accordion-arr" id="done-proj-arr">▼</span>';
+    var accBody=mk('div','done-accordion-body');
+    accBody.id='done-proj-body';
+    // 各完了案件をカード形式で表示
+    doneL.forEach(function(pObj){
+      var inner=mk('div','done-pcard');
+      var proj=pObj.name;
+      var allE=getE().filter(function(e){ return e.project===proj; });
+      var expE=allE.filter(function(e){ return e.type==='expense'; });
+      var totalInc=allE.filter(function(e){ return e.type==='income'; }).reduce(function(s,e){return s+e.amount;},0);
+      var totalExp=expE.reduce(function(s,e){return s+e.amount;},0);
+      var bal=totalInc-totalExp;
+      // ヘッダー
+      var ph=mk('div'); ph.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:8px';
+      var pnm=mk('div'); pnm.style.cssText='font-size:15px;font-weight:700;color:var(--sub)'; pnm.textContent=proj;
+      ph.appendChild(pnm);
+      inner.appendChild(ph);
+      // サマリー
+      var sm=mk('div'); sm.style.cssText='display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;padding:8px;background:var(--bg);border-radius:8px;opacity:.8;';
+      sm.innerHTML=
+        '<div style="text-align:center"><div style="font-size:10px;color:var(--sub)">収入</div><div style="font-size:13px;font-weight:700;color:#1A5276">+¥'+totalInc.toLocaleString()+'</div></div>'+
+        '<div style="text-align:center"><div style="font-size:10px;color:var(--sub)">経費</div><div style="font-size:13px;font-weight:700;color:#C0392B">-¥'+totalExp.toLocaleString()+'</div></div>'+
+        '<div style="text-align:center"><div style="font-size:10px;color:var(--sub)">収支</div><div style="font-size:13px;font-weight:700;color:'+(bal>=0?'#1A5276':'#C0392B')+'">'+(bal>=0?'+':'')+'¥'+bal.toLocaleString()+'</div></div>';
+      inner.appendChild(sm);
+      // 明細
+      expE.forEach(function(e){
+        var row=mk('div','pe'); row.style.cursor='default';
+        var l=mk('div','pel');
+        var dtStr='<span style="font-size:11px;color:var(--sub)">決: '+fmtDate(e.paymentDate||'')+'</span>';
+        if(e.usageDate) dtStr+='<br><span style="font-size:11px;color:var(--sub)">利: '+fmtDate(e.usageDate)+'</span>';
+        l.innerHTML=esc(e.category||'')+(e.memo?'・'+esc(e.memo):'')+' <br>'+dtStr;
+        var a=mk('div','pea'); a.textContent='¥'+e.amount.toLocaleString();
+        row.appendChild(l); row.appendChild(a);
+        inner.appendChild(row);
+      });
+      accBody.appendChild(inner);
+    });
+    hd2.addEventListener('click',function(){
+      accBody.classList.toggle('open');
+      q('done-proj-arr').classList.toggle('open');
+    });
+    acc.appendChild(hd2); acc.appendChild(accBody);
+    body.appendChild(acc);
+  }
+}
+function makePCard(pObj, data, isDone){
+  var proj=pObj.name;
+  var allEntries=getE().filter(function(e){ return e.project===proj; });
+  var expEntries=allEntries.filter(function(e){ return e.type==='expense'; });
+  var totalInc=allEntries.filter(function(e){ return e.type==='income'; }).reduce(function(s,e){return s+e.amount;},0);
+  var totalExp=expEntries.reduce(function(s,e){return s+e.amount;},0);
+  var balance=totalInc-totalExp;
+  var card=mk('div','pc'+(isDone?' done':''));
+  var hd=mk('div','pchd');
+  if(!isDone){ var drag=mk('div','pcdrag'); drag.textContent='⠿'; hd.appendChild(drag); }
+  var nm=mk('div','pcname'); nm.textContent=proj; hd.appendChild(nm);
+  card.appendChild(hd);
+
+  // 会社
+  if(pObj.company){ var coTag=mk('div'); coTag.style.cssText='font-size:11px;color:var(--sub);margin-bottom:6px;'; coTag.textContent='取引先: '+pObj.company; card.appendChild(coTag); }
+
+  // 収支サマリー
+  var sumDiv=mk('div'); sumDiv.style.cssText='display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;padding:8px;background:var(--bg);border-radius:8px;';
+  sumDiv.innerHTML=
+    '<div style="text-align:center"><div style="font-size:10px;color:var(--sub)">収入</div><div style="font-size:14px;font-weight:700;color:#1A5276">+¥'+totalInc.toLocaleString()+'</div></div>'+
+    '<div style="text-align:center"><div style="font-size:10px;color:var(--sub)">経費</div><div style="font-size:14px;font-weight:700;color:#C0392B">-¥'+totalExp.toLocaleString()+'</div></div>'+
+    '<div style="text-align:center"><div style="font-size:10px;color:var(--sub)">収支</div><div style="font-size:14px;font-weight:700;color:'+(balance>=0?'#1A5276':'#C0392B')+'">'+(balance>=0?'+':'')+' ¥'+balance.toLocaleString()+'</div></div>';
+  card.appendChild(sumDiv);
+
+  // 収支比率バー（収入に対する経費の割合）
+  if(totalInc>0||totalExp>0){
+    var total=totalInc+totalExp;
+    var incPct=total>0?Math.round(totalInc/total*100):0;
+    var expPct=100-incPct;
+    var eRate=totalInc>0?Math.min(100,Math.round(totalExp/totalInc*100)):0;
+    var eColor=eRate>40?'#EF4444':'#10B981';
+    var barDiv=mk('div'); barDiv.style.cssText='margin-bottom:8px;';
+    barDiv.innerHTML=
+      '<div style="display:flex;border-radius:4px;overflow:hidden;height:10px;margin-bottom:3px">'+
+        '<div style="width:'+expPct+'%;background:#EF4444"></div>'+
+        '<div style="flex:1;background:#10B981"></div>'+
+      '</div>'+
+      '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--sub)">'+
+        '<span>経費率 <span style="color:'+eColor+';font-weight:700">'+eRate+'%</span> <span style="font-size:9px">(¥'+totalExp.toLocaleString()+')</span></span>'+
+        '<span>売上 <span style="color:#1A5276;font-size:9px">¥'+totalInc.toLocaleString()+'</span></span>'+
+      '</div>';
+    card.appendChild(barDiv);
+  }
+
+  // 経費エントリ一覧
+  var eo=getEntryOrders(proj);
+  var sortedE=expEntries.slice().sort(function(a,b){ var ai=eo.indexOf(a.id),bi=eo.indexOf(b.id); if(ai===-1)ai=9999; if(bi===-1)bi=9999; return ai-bi; });
+  var area=mk('div'); area.setAttribute('data-proj-entries',proj);
+  sortedE.forEach(function(e){
+    var row=mk('div','pe'); row.setAttribute('data-eid',e.id); row.draggable=!isDone;
+    var dragH=mk('div','pe-drag'); dragH.textContent='⠿';
+    var l=mk('div','pel');
+    var dtFull=fmtDate(e.paymentDate||'');
+    var dtStr='<span style="font-size:11px;color:var(--sub)">決: '+dtFull+'</span>';
+    if(e.usageDate){ dtStr+='<br><span style="font-size:11px;color:var(--sub)">利: '+fmtDate(e.usageDate)+'</span>'; }
+    l.innerHTML=esc(e.category||'')+(e.memo?'・'+esc(e.memo):'')+' <br>'+dtStr;
+    var a=mk('div','pea'); a.textContent='¥'+e.amount.toLocaleString();
+    row.appendChild(dragH); row.appendChild(l); row.appendChild(a); area.appendChild(row);
+    if(!isDone){
+      row.addEventListener('dragstart',function(ev){ ev.stopPropagation(); ev.dataTransfer.setData('text/plain','entry:'+e.id+':'+proj); setTimeout(function(){row.classList.add('dragging');},0); });
+      row.addEventListener('dragend',function(){ row.classList.remove('dragging'); });
+      row.addEventListener('dragover',function(ev){ ev.preventDefault(); ev.stopPropagation(); });
+      row.addEventListener('drop',async function(ev){
+        ev.preventDefault(); ev.stopPropagation();
+        var raw=ev.dataTransfer.getData('text/plain'); if(!raw.startsWith('entry:')) return;
+        var parts=raw.split(':'), fromId=parseInt(parts[1]), fromProj=parts[2];
+        if(fromProj!==proj||fromId===e.id) return;
+        var eo2=getEntryOrders(proj);
+        var cur=expEntries.slice().sort(function(a2,b2){ var ai2=eo2.indexOf(a2.id),bi2=eo2.indexOf(b2.id); if(ai2===-1)ai2=9999; if(bi2===-1)bi2=9999; return ai2-bi2; });
+        var ids=cur.map(function(x){return x.id;}), fi=ids.indexOf(fromId), ti=ids.indexOf(e.id);
+        if(fi!==-1&&ti!==-1){ ids.splice(fi,1); ids.splice(ti,0,fromId); showLoading(true); await saveEntryOrders(proj,ids); showLoading(false); renderProj(); }
+      });
+    }
+  });
+  card.appendChild(area);
+  if(!isDone){
+    card.draggable=true;
+    card.addEventListener('dragstart',function(ev){ if(ev.target.closest('[data-proj-entries]')) return; ev.dataTransfer.setData('text/plain','proj:'+proj); setTimeout(function(){card.classList.add('dragging');},0); });
+    card.addEventListener('dragend',function(){ card.classList.remove('dragging'); });
+    card.addEventListener('dragover',function(ev){ ev.preventDefault(); });
+    card.addEventListener('drop',async function(ev){
+      ev.preventDefault();
+      var raw=ev.dataTransfer.getData('text/plain'); if(!raw.startsWith('proj:')) return;
+      var from=raw.slice(5); if(from===proj) return;
+      var s2=sortedP().map(function(x){return x.name;}), fi=s2.indexOf(from), ti=s2.indexOf(proj);
+      if(fi!==-1&&ti!==-1){ s2.splice(fi,1); s2.splice(ti,0,from); showLoading(true); await setO(s2); showLoading(false); renderProj(); }
+    });
+  }
+  return card;
+}
+async function markDone(p){ var d=getD(); if(d.indexOf(p)===-1)d.push(p); await setD(d); renderProj(); }
+async function undoDone(p){ await setD(getD().filter(function(x){ return x!==p; })); renderProj(); }
+
+// ===== ANNUAL =====
+function renderAnnual(){
+  q('yr-lbl').textContent=S.yrY+'年';
+  var data=getE();
+  var monthly=Array.from({length:12},function(_,i){ return {inc:0,exp:0}; });
+  data.forEach(function(e){
+    var ds=(e.paymentDate||'').slice(0,10); if(!ds) return;
+    var d=new Date(ds+'T00:00:00'); if(d.getFullYear()!==S.yrY) return;
+    var m=d.getMonth();
+    if(e.type==='income') monthly[m].inc+=e.amount;
+    else if(e.type==='expense') monthly[m].exp+=e.amount;
+  });
+  var totalInc=monthly.reduce(function(s,m){return s+m.inc;},0);
+  var totalExp=monthly.reduce(function(s,m){return s+m.exp;},0);
+  q('yr-sum').innerHTML=
+    '<div class="yr-si"><div class="yr-sl">年間収入</div><div class="yr-sv" style="color:#1A5276">+¥'+totalInc.toLocaleString()+'</div></div>'+
+    '<div class="yr-si"><div class="yr-sl">年間経費</div><div class="yr-sv" style="color:#C0392B">-¥'+totalExp.toLocaleString()+'</div></div>'+
+    '<div class="yr-si"><div class="yr-sl">収支</div><div class="yr-sv" style="color:'+((totalInc-totalExp)>=0?'#1A5276':'#C0392B')+'">'+(totalInc-totalExp>=0?'+':'')+'¥'+(totalInc-totalExp).toLocaleString()+'</div></div>'+
+    '<div class="yr-si"><div class="yr-sl">経費率</div><div class="yr-sv" style="color:var(--sub)">'+(totalInc>0?Math.round(totalExp/totalInc*100)+'%':'-%')+'</div></div>';
+
+  // 売上目標進捗
+  var target=cache.salesTargets&&cache.salesTargets[String(S.yrY)];
+  var tw=q('yr-target-wrap');
+  if(target&&parseInt(target)>0){
+    tw.style.display='';
+    var tgt=parseInt(target);
+    var pct=Math.min(100,Math.round(totalInc/tgt*100));
+    var barColor=pct>=100?'#10B981':pct>=80?'#7B5EA7':pct>=50?'#F59E0B':'#EF4444';
+    tw.innerHTML=
+      '<div class="chart-wrap" style="margin-bottom:0">'+
+        '<div class="chart-title">売上目標進捗 — '+S.yrY+'年</div>'+
+        '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px">'+
+          '<span style="font-weight:700;color:'+barColor+'">'+pct+'%達成</span>'+
+          '<span style="color:var(--sub)">目標: ¥'+tgt.toLocaleString()+'</span>'+
+        '</div>'+
+        '<div style="background:#F3F4F6;border-radius:8px;height:18px;overflow:hidden;margin-bottom:6px">'+
+          '<div style="height:100%;width:'+pct+'%;background:'+barColor+';border-radius:8px;transition:width .5s"></div>'+
+        '</div>'+
+        '<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--sub)">'+
+          '<span>達成: ¥'+totalInc.toLocaleString()+'</span>'+
+          '<span>残り: ¥'+Math.max(0,tgt-totalInc).toLocaleString()+'</span>'+
+        '</div>'+
+      '</div>';
+  } else { tw.style.display='none'; }
+
+  // bar chart
+  var allVals=monthly.map(function(m){return Math.max(m.inc,m.exp);}); allVals.push(1);
+  var maxVal=Math.max.apply(null,allVals);
+  var chart=q('yr-chart'); chart.innerHTML='';
+  var mNames=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  monthly.forEach(function(m,i){
+    var col=mk('div','bar-col');
+    var iH=Math.round(m.inc/maxVal*100), eH=Math.round(m.exp/maxVal*100);
+    col.innerHTML='<div class="bar-inc" style="height:'+iH+'px" title="収入:¥'+m.inc.toLocaleString()+'"></div><div class="bar-exp" style="height:'+eH+'px" title="経費:¥'+m.exp.toLocaleString()+'"></div><div class="bar-lbl">'+mNames[i]+'</div>';
+    chart.appendChild(col);
+  });
+
+  // monthly table
+  var tbl=q('yr-table'); tbl.innerHTML='';
+  var hdr=mk('div','mt-row');
+  hdr.innerHTML='<div class="mt-hd">月</div><div class="mt-hd" style="text-align:right">収入</div><div class="mt-hd" style="text-align:right">経費</div><div class="mt-hd" style="text-align:right">収支</div>';
+  tbl.appendChild(hdr);
+  monthly.forEach(function(m,i){
+    var row=mk('div','mt-row'), bal=m.inc-m.exp;
+    row.innerHTML='<div>'+(i+1)+'月</div><div style="text-align:right;color:#1A5276">'+(m.inc?'+¥'+m.inc.toLocaleString():'-')+'</div><div style="text-align:right;color:#C0392B">'+(m.exp?'-¥'+m.exp.toLocaleString():'-')+'</div><div style="text-align:right;color:'+(bal>=0?'#1A5276':'#C0392B')+'">'+(m.inc||m.exp?(bal>=0?'+':'')+'¥'+bal.toLocaleString():'-')+'</div>';
+    tbl.appendChild(row);
+  });
+}
+
+// ===== SETTINGS =====
+function renderSet(){
+  renderSetTargets();
+  renderSetProjects();
+  renderSetDone();
+  renderSetCompanies();
+  fillCoSel(q('set-co-sel'));
+}
+
+function renderSetTargets(){
+  var list=q('set-target-list'); list.innerHTML='';
+  var targets=cache.salesTargets||{};
+  var years=Object.keys(targets).sort();
+  if(!years.length){ var e=mk('div'); e.style.cssText='color:var(--sub);font-size:14px;padding:4px 0 8px'; e.textContent='目標が設定されていません'; list.appendChild(e); return; }
+  years.forEach(function(yr){
+    var row=mk('div','srow');
+    var nm=mk('div','sname'); nm.textContent=yr+'年: ¥'+parseInt(targets[yr]).toLocaleString();
+    var delBtn=mk('button','sdel'); delBtn.textContent='削除'; delBtn.type='button';
+    (function(y){ delBtn.addEventListener('click',async function(){
+      delete cache.salesTargets[y]; showLoading(true); await saveMeta(); showLoading(false); renderSetTargets();
+    }); })(yr);
+    row.appendChild(nm); row.appendChild(delBtn); list.appendChild(row);
+  });
+}
+
+function renderSetProjects(){
+  var sorted=sortedP(), done=getD(), list=q('set-list'); list.innerHTML='';
+  var active=sorted.filter(function(p){ return done.indexOf(p.name)===-1; });
+  if(!active.length){ var e=mk('div'); e.style.cssText='color:var(--sub);font-size:14px;padding:8px 0 4px'; e.textContent='案件がありません'; list.appendChild(e); return; }
+  active.forEach(function(pObj){
+    var row=mk('div','srow'); row.draggable=true;
+    var drag=mk('div','sdrag'); drag.textContent='⠿';
+    var info=mk('div'); info.style.cssText='flex:1;min-width:0';
+    var nm=mk('div','sname'); nm.textContent=pObj.name;
+    var sub=mk('div'); sub.style.cssText='font-size:11px;color:var(--sub)';
+    sub.textContent=(pObj.budget?'予算:¥'+parseInt(pObj.budget).toLocaleString()+' ':'')+( pObj.company?'/ '+pObj.company:'');
+    info.appendChild(nm); info.appendChild(sub);
+    var dBtn=mk('button','sdone-btn'); dBtn.textContent='完了';
+    var delBtn=mk('button','sdel'); delBtn.textContent='削除'; delBtn.type='button';
+    (function(p){ dBtn.addEventListener('click',async function(){ showLoading(true); await markDone(p.name); showLoading(false); renderSet(); renderProj(); }); })(pObj);
+    (function(p){ delBtn.addEventListener('click',function(){ delProject(p.name); }); })(pObj);
+    row.appendChild(drag); row.appendChild(info); row.appendChild(dBtn); row.appendChild(delBtn);
+
+    // drag
+    row.addEventListener('dragstart',function(ev){ ev.dataTransfer.setData('text/plain',pObj.name); setTimeout(function(){row.classList.add('dragging');},0); });
+    row.addEventListener('dragend',function(){ row.classList.remove('dragging'); });
+    row.addEventListener('dragover',function(ev){ ev.preventDefault(); });
+    row.addEventListener('drop',async function(ev){
+      ev.preventDefault();
+      var from=ev.dataTransfer.getData('text/plain'); if(from===pObj.name) return;
+      var s2=sortedP().map(function(x){return x.name;}), fi=s2.indexOf(from), ti=s2.indexOf(pObj.name);
+      if(fi!==-1&&ti!==-1){ s2.splice(fi,1); s2.splice(ti,0,from); showLoading(true); await setO(s2); showLoading(false); renderSet(); }
+    });
+    list.appendChild(row);
+  });
+}
+
+function renderSetDone(){
+  var done=getD(), sorted=sortedP();
+  var doneProjs=sorted.filter(function(p){ return done.indexOf(p.name)!==-1; });
+  var body=q('done-summary-body'); body.innerHTML='';
+  q('done-summary-sec').style.display=doneProjs.length?'':'none';
+  doneProjs.forEach(function(pObj){
+    var row=mk('div','srow');
+    var nm=mk('div','sname'); nm.textContent=pObj.name;
+    var undoBtn=mk('button','sdone-btn is-done'); undoBtn.textContent='戻す';
+    (function(p){ undoBtn.addEventListener('click',async function(){ showLoading(true); await undoDone(p.name); showLoading(false); renderSet(); renderProj(); }); })(pObj);
+    row.appendChild(nm); row.appendChild(undoBtn); body.appendChild(row);
+  });
+}
+
+function renderSetCompanies(){
+  var cos=getC(), list=q('set-co-list'); list.innerHTML='';
+  if(!cos.length){ var e=mk('div'); e.style.cssText='color:var(--sub);font-size:14px;padding:8px 0 4px'; e.textContent='会社がありません'; list.appendChild(e); return; }
+  cos.forEach(function(co){
+    var row=mk('div','srow');
+    var nm=mk('div','sname'); nm.textContent=co;
+    var delBtn=mk('button','sdel'); delBtn.textContent='削除'; delBtn.type='button';
+    (function(c){ delBtn.addEventListener('click',function(){ delCompany(c); }); })(co);
+    row.appendChild(nm); row.appendChild(delBtn); list.appendChild(row);
+  });
+}
+
+async function addProject(){
+  var name=q('set-inp').value.trim(), co=q('set-co-sel').value;
+  if(!name){ alert('案件名を入力してください'); return; }
+  if(cache.projects.find(function(p){return p.name===name;})){ alert('同じ名前の案件が既にあります'); return; }
+  cache.projects.push({name:name, company:co});
+  showLoading(true); await saveProjects(); showLoading(false);
+  q('set-inp').value=''; q('set-co-sel').value='';
+  renderSet();
+  showChara('案件を追加したよ！');
+}
+
+async function delProject(proj){
+  if(!confirm('「'+proj+'」を削除しますか？\n※この案件の記録は残ります')) return;
+  cache.projects=cache.projects.filter(function(p){return p.name!==proj;});
+  cache.doneItems=cache.doneItems.filter(function(p){return p!==proj;});
+  showLoading(true); await saveProjects(); await saveMeta(); showLoading(false); renderSet();
+}
+
+async function addSalesTarget(){
+  var yr=q('set-target-year').value.trim();
+  var amt=q('set-target-amt').value.trim();
+  if(!yr||!amt){ alert('年と目標金額を入力してください'); return; }
+  if(!cache.salesTargets) cache.salesTargets={};
+  cache.salesTargets[yr]=parseInt(amt);
+  showLoading(true); await saveMeta(); showLoading(false);
+  q('set-target-year').value=''; q('set-target-amt').value='';
+  renderSetTargets();
+}
+
+async function addCompany(){
+  var name=q('set-co-inp').value.trim();
+  if(!name){ alert('会社名を入力してください'); return; }
+  if(cache.companies.indexOf(name)!==-1){ alert('同じ名前の会社が既にあります'); return; }
+  cache.companies.push(name);
+  showLoading(true); await saveCompanies(); showLoading(false);
+  q('set-co-inp').value=''; renderSet();
+  showChara('会社を追加したよ！');
+}
+
+async function delCompany(co){
+  if(!confirm('「'+co+'」を削除しますか？')) return;
+  cache.companies=cache.companies.filter(function(c){return c!==co;});
+  showLoading(true); await saveCompanies(); showLoading(false); renderSet();
+}
+</script>
+</body>
+</html>
